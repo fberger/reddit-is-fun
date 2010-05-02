@@ -60,11 +60,13 @@ import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.TextAppearanceSpan;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -126,6 +128,9 @@ public final class RedditIsFun extends ListActivity {
     // Menu
     private boolean mCanChord = false;
     
+    private final GestureDetector gestureDector = new GestureDetector(new GestureListenerImpl());
+    
+    private boolean flinged = false;
     
     /**
      * Called when the activity starts up. Do activity initialization
@@ -136,7 +141,7 @@ public final class RedditIsFun extends ListActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
+            
         Common.loadRedditPreferences(getApplicationContext(), mSettings, mClient);
         setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
@@ -489,7 +494,15 @@ public final class RedditIsFun extends ListActivity {
         // if mThreadsAdapter.getCount() - 1 contains the "next 25, prev 25" buttons,
         // or if there are fewer than 25 threads...
         if (position < mThreadsAdapter.getCount() - 1 || mThreadsAdapter.getCount() < Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT + 1) {
-            if (mSettings.onClickAction.equals(Constants.PREF_ON_CLICK_FIRST_TIME)) {
+        	if (flinged) {
+            	flinged = false;
+            	Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
+    			i.putExtra(Constants.EXTRA_SUBREDDIT, mVoteTargetThingInfo.getSubreddit());
+    			i.putExtra(Constants.EXTRA_ID, mVoteTargetThingInfo.getId());
+    			i.putExtra(Constants.EXTRA_TITLE, mVoteTargetThingInfo.getTitle());
+    			i.putExtra(Constants.EXTRA_NUM_COMMENTS, Integer.valueOf(mVoteTargetThingInfo.getNum_comments()));
+    			startActivity(i);
+            } else if (mSettings.onClickAction.equals(Constants.PREF_ON_CLICK_FIRST_TIME)) {
             	showDialog(Constants.DIALOG_FIRST_ON_CLICK);
             } else if (mSettings.onClickAction.equals(Constants.PREF_ON_CLICK_OPEN_LINK)) {
                 Common.launchBrowser(item.getUrl(), RedditIsFun.this);
@@ -1083,7 +1096,26 @@ public final class RedditIsFun extends ListActivity {
     	
         return true;
     }
-
+    
+    
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event) {
+    	if (gestureDector.onTouchEvent(event)) { 
+    		return true;
+    	}
+    	return super.dispatchTouchEvent(event);
+    } 
+    
+    class GestureListenerImpl extends GestureDetector.SimpleOnGestureListener {
+    	@Override  public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+    		Log.d(TAG, e1.toString() + e2.toString());
+    		if (e2.getX() < e1.getX()) {
+    			flinged = true;
+    		}
+    		return false;
+    	}
+    }
+    
     @Override
     protected Dialog onCreateDialog(int id) {
     	Dialog dialog;
