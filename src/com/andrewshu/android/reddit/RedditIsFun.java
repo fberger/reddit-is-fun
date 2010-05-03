@@ -1109,7 +1109,7 @@ public final class RedditIsFun extends ListActivity {
     class GestureListenerImpl extends GestureDetector.SimpleOnGestureListener {
     	@Override  public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
     		Log.d(TAG, e1.toString() + e2.toString());
-    		if (e2.getX() < e1.getX()) {
+    		if (e2.getX() < e1.getX() - 10) {
     			flinged = true;
     		}
     		return false;
